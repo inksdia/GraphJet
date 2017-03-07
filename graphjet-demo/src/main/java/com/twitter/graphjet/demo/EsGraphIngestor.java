@@ -1,21 +1,6 @@
-/**
- * Copyright 2016 Twitter. All rights reserved.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.twitter.graphjet.demo;
 
+import SprESRepo.Graph;
 import SprESRepo.Message;
 import SprESRepo.ProfileUser;
 import com.twitter.graphjet.bipartite.MultiSegmentPowerLawBipartiteGraph;
@@ -31,26 +16,94 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-import sun.java2d.cmm.Profile;
-import sun.plugin.util.UserProfile;
 import twitter4j.HashtagEntity;
-import twitter4j.StallWarning;
-import twitter4j.Status;
-import twitter4j.StatusDeletionNotice;
-import twitter4j.StatusListener;
-import twitter4j.TwitterStream;
-import twitter4j.TwitterStreamFactory;
 
-import javax.servlet.Servlet;
 import java.util.Date;
 
 /**
- * Demo of GraphJet. This program uses Twitter4j to read from the streaming API, where it observes status messages to
- * maintain a bipartite graph of users (on the left) and tweets (on the right). An edge indicates that a user posted a
- * tweet (with retweets resolved to their sources). The program also starts up a Jetty server to present a REST API to
- * access statistics of the graph.
+ * Created by dekorate on 06/03/17.
  */
-public class TwitterStreamReader {
+public class EsGraphIngestor {
+
+    public static MultiSegmentPowerLawBipartiteGraph userTweetBigraph;
+    public static MultiSegmentPowerLawBipartiteGraph tweetHashtagBigraph;
+    public static Graph graph;
+    public static Long2ObjectOpenHashMap<ProfileUser> users = new Long2ObjectOpenHashMap<>();
+    public static LongOpenHashSet tweets = new LongOpenHashSet();
+    public static Long2ObjectOpenHashMap<String> hashtags;
+    int statusCnt = 0;
+    public static int minorUpdateInterval = 1000;
+    public static int majorUpdateInterval = 10000;
+    private static Date start;
+
+    public void indexMessage(Message message) {
+        ProfileUser user = message.getUser();
+        long userId = message.getUser().getId();
+        long tweetId = message.getId();
+        long resolvedTweetId = message. ? message.getRetweetId() : message.getId();
+        HashtagEntity[] hashtagEntities = status.getHashtagEntities();
+
+        userTweetBigraph.addEdge(userId, resolvedTweetId, (byte) 0);
+        graph.addLink(message);
+
+        if (!users.containsKey(userId)) {
+            users.put(userId, user);
+        }
+
+        if (!tweets.contains(tweetId)) {
+            tweets.add(tweetId);
+        }
+        if (!tweets.contains(resolvedTweetId)) {
+            tweets.add(resolvedTweetId);
+        }
+
+        for (HashtagEntity entity : hashtagEntities) {
+            long hashtagHash = (long) entity.getText().toLowerCase().hashCode();
+            tweetHashtagBigraph.addEdge(tweetId, hashtagHash, (byte) 0);
+            if (!hashtags.containsKey(hashtagHash)) {
+                hashtags.put(hashtagHash, entity.getText().toLowerCase());
+            }
+        }
+
+        statusCnt++;
+
+        // Note that status updates are currently performed synchronously (i.e., blocking). Best practices dictate that
+        // they should happen on another thread so as to not interfere with ingest, but this is okay for the pruposes
+        // of the demo and the volume of the sample stream.
+
+        // Minor status update: just print counters.
+
+        if (statusCnt % minorUpdateInterval == 0) {
+            long duration = (new Date().getTime() - start.getTime()) / 1000;
+
+            System.out.println(String.format("%tc: %,d statuses, %,d unique tweets, %,d unique hashtags (observed); " +
+                            "%.2f edges/s; totalMemory(): %,d bytes, freeMemory(): %,d bytes",
+                    new Date(), statusCnt, tweets.size(), hashtags.size(), (float) statusCnt / duration,
+                    Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory()));
+        }
+
+        // Major status update: iterate over right and left nodes.
+        if (statusCnt % majorUpdateInterval == 0) {
+            int leftCnt = 0;
+            LongIterator leftIter = tweets.iterator();
+            while (leftIter.hasNext()) {
+                if (userTweetBigraph.getLeftNodeDegree(leftIter.nextLong()) != 0)
+                    leftCnt++;
+            }
+
+            int rightCnt = 0;
+            LongIterator rightIter = hashtags.keySet().iterator();
+            while (rightIter.hasNext()) {
+                if (userTweetBigraph.getRightNodeDegree(rightIter.nextLong()) != 0)
+                    rightCnt++;
+            }
+            System.out.println(String.format("%tc: Current user-tweet graph state: %,d left nodes (users), " +
+                            "%,d right nodes (tweets)",
+                    new Date(), leftCnt, rightCnt));
+        }
+
+    }
+
     private static class TwitterStreamReaderArgs {
         @Option(name = "-port", metaVar = "[port]", usage = "port")
         int port = 8888;
@@ -106,7 +159,8 @@ public class TwitterStreamReader {
             return;
         }
 
-        final Date demoStart = new Date();
+        start = new Date();
+        graph = new Graph();
         final MultiSegmentPowerLawBipartiteGraph userTweetBigraph =
                 new MultiSegmentPowerLawBipartiteGraph(args.maxSegments, args.maxEdgesPerSegment,
                         args.leftSize, args.leftDegree, args.leftPowerLawExponent,
@@ -125,101 +179,8 @@ public class TwitterStreamReader {
         // Note that we're keeping track of the nodes on the left and right sides externally, apart from the bigraphs,
         // because the bigraph currently does not provide an API for enumerating over nodes. Currently, this is liable to
         // running out of memory, but this is fine for the demo.
-        Long2ObjectOpenHashMap<String> users = new Long2ObjectOpenHashMap<>();
-        LongOpenHashSet tweets = new LongOpenHashSet();
-        Long2ObjectOpenHashMap<String> hashtags = new Long2ObjectOpenHashMap<>();
         // It is accurate of think of these two data structures as holding all users and tweets observed on the stream since
         // the demo program was started.
-
-        StatusListener listener = new StatusListener() {
-            long statusCnt = 0;
-
-            public void onStatus(Status status) {
-
-                String screenname = status.getUser().getScreenName();
-                long userId = status.getUser().getId();
-                long tweetId = status.getId();
-                long resolvedTweetId = status.isRetweet() ? status.getRetweetedStatus().getId() : status.getId();
-                HashtagEntity[] hashtagEntities = status.getHashtagEntities();
-
-                userTweetBigraph.addEdge(userId, resolvedTweetId, (byte) 0);
-
-                if (!users.containsKey(userId)) {
-                    users.put(userId, screenname);
-                }
-
-                if (!tweets.contains(tweetId)) {
-                    tweets.add(tweetId);
-                }
-                if (!tweets.contains(resolvedTweetId)) {
-                    tweets.add(resolvedTweetId);
-                }
-
-                for (HashtagEntity entity : hashtagEntities) {
-                    long hashtagHash = (long) entity.getText().toLowerCase().hashCode();
-                    tweetHashtagBigraph.addEdge(tweetId, hashtagHash, (byte) 0);
-                    if (!hashtags.containsKey(hashtagHash)) {
-                        hashtags.put(hashtagHash, entity.getText().toLowerCase());
-                    }
-                }
-
-                statusCnt++;
-
-                // Note that status updates are currently performed synchronously (i.e., blocking). Best practices dictate that
-                // they should happen on another thread so as to not interfere with ingest, but this is okay for the pruposes
-                // of the demo and the volume of the sample stream.
-
-                // Minor status update: just print counters.
-                if (statusCnt % args.minorUpdateInterval == 0) {
-                    long duration = (new Date().getTime() - demoStart.getTime()) / 1000;
-
-                    System.out.println(String.format("%tc: %,d statuses, %,d unique tweets, %,d unique hashtags (observed); " +
-                                    "%.2f edges/s; totalMemory(): %,d bytes, freeMemory(): %,d bytes",
-                            new Date(), statusCnt, tweets.size(), hashtags.size(), (float) statusCnt / duration,
-                            Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory()));
-                }
-
-                // Major status update: iterate over right and left nodes.
-                if (statusCnt % args.majorUpdateInterval == 0) {
-                    int leftCnt = 0;
-                    LongIterator leftIter = tweets.iterator();
-                    while (leftIter.hasNext()) {
-                        if (userTweetBigraph.getLeftNodeDegree(leftIter.nextLong()) != 0)
-                            leftCnt++;
-                    }
-
-                    int rightCnt = 0;
-                    LongIterator rightIter = hashtags.keySet().iterator();
-                    while (rightIter.hasNext()) {
-                        if (userTweetBigraph.getRightNodeDegree(rightIter.nextLong()) != 0)
-                            rightCnt++;
-                    }
-                    System.out.println(String.format("%tc: Current user-tweet graph state: %,d left nodes (users), " +
-                                    "%,d right nodes (tweets)",
-                            new Date(), leftCnt, rightCnt));
-                }
-            }
-
-            public void onScrubGeo(long userId, long upToStatusId) {
-            }
-
-            public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
-            }
-
-            public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
-            }
-
-            public void onStallWarning(StallWarning warning) {
-            }
-
-            public void onException(Exception e) {
-                e.printStackTrace();
-            }
-        };
-
-        TwitterStream twitterStream = new TwitterStreamFactory().getInstance();
-        twitterStream.addListener(listener);
-        twitterStream.sample();
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
@@ -227,7 +188,7 @@ public class TwitterStreamReader {
         Server jettyServer = new Server(args.port);
         jettyServer.setHandler(context);
 
-        context.addServlet(new ServletHolder(new TopUsersServlet(userTweetBigraph, users)),
+        context.addServlet(new ServletHolder(new TopUsersServlet(userTweetBigraph, graph.getUserProfileMap())),
                 "/userTweetGraph/topUsers");
         context.addServlet(new ServletHolder(new TopTweetsServlet(userTweetBigraph, tweets,
                 TopTweetsServlet.GraphType.USER_TWEET)), "/userTweetGraph/topTweets");

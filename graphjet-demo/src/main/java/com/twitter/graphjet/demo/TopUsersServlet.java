@@ -1,12 +1,12 @@
 /**
  * Copyright 2016 Twitter. All rights reserved.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +16,7 @@
 
 package com.twitter.graphjet.demo;
 
+import SprESRepo.ProfileUser;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.twitter.graphjet.bipartite.MultiSegmentPowerLawBipartiteGraph;
@@ -23,76 +24,76 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.util.log.Log;
+import sun.java2d.cmm.Profile;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.PriorityQueue;
+import java.util.*;
 
 /**
  * Servlet of {@link TwitterStreamReader} that returns the top <i>k</i> users in terms of degree in the user-tweet
  * bipartite graph.
  */
 public class TopUsersServlet extends HttpServlet {
-  private static final Joiner JOINER = Joiner.on(",\n");
-  private final MultiSegmentPowerLawBipartiteGraph bigraph;
-  private final Long2ObjectMap<String> users;
+    private static final Joiner JOINER = Joiner.on(",\n");
+    private final MultiSegmentPowerLawBipartiteGraph bigraph;
+    private final Map<Long, ProfileUser> users;
 
-  public TopUsersServlet(MultiSegmentPowerLawBipartiteGraph bigraph, Long2ObjectOpenHashMap<String> users) {
-    this.bigraph = bigraph;
-    this.users = users;
-  }
-
-  @Override
-  protected void doGet(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException {
-    int k = 10;
-    String p = request.getParameter("k");
-    if (p != null) {
-      try {
-        k = Integer.parseInt(p);
-      } catch (NumberFormatException e) {
-        // Just eat it, don't need to worry.
-      }
+    public TopUsersServlet(MultiSegmentPowerLawBipartiteGraph bigraph, Map<Long, ProfileUser> users) {
+        this.bigraph = bigraph;
+        this.users = users;
     }
 
-    PriorityQueue<NodeValueEntry> queue = new PriorityQueue<>(k);
-    LongIterator iter = users.keySet().iterator();
-    while (iter.hasNext()) {
-      long user = iter.nextLong();
-      int cnt = bigraph.getLeftNodeDegree(user);
-      if (cnt == 1) continue;
-
-      if (queue.size() < k) {
-        queue.add(new NodeValueEntry(user, cnt));
-      } else {
-        NodeValueEntry peek = queue.peek();
-        // Break ties by preferring higher userid (i.e., more recent user)
-        if (cnt > peek.getValue() || (cnt == peek.getValue() && user > peek.getNode())) {
-          queue.poll();
-          queue.add(new NodeValueEntry(user, cnt));
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        int k = 10;
+        String p = request.getParameter("k");
+        if (p != null) {
+            try {
+                k = Integer.parseInt(p);
+            } catch (NumberFormatException e) {
+                // Just eat it, don't need to worry.
+            }
         }
-      }
-    }
 
-    if (queue.size() == 0) {
-      response.getWriter().println("[]\n");
-      return;
-    }
+        PriorityQueue<NodeValueEntry> queue = new PriorityQueue<>(k);
+        Iterator<Long> iter = users.keySet().iterator();
+        while (iter.hasNext()) {
+            long user = iter.next();
+            int cnt = bigraph.getLeftNodeDegree(user);
+            if (cnt == 1) continue;
 
-    NodeValueEntry e;
-    List<String> entries = new ArrayList<>(queue.size());
-    while ((e = queue.poll()) != null) {
-      // Note that we explicitly use id_str and treat the tweet id as a String. See:
-      // https://dev.twitter.com/overview/api/twitter-ids-json-and-snowflake
-      entries.add(String.format("{\"id_str\": \"%d\", \"cnt\": %d}", e.getNode(), (int) e.getValue()));
-    }
+            if (queue.size() < k) {
+                queue.add(new NodeValueEntry(user, cnt));
+            } else {
+                NodeValueEntry peek = queue.peek();
+                // Break ties by preferring higher userid (i.e., more recent user)
+                if (cnt > peek.getValue() || (cnt == peek.getValue() && user > peek.getNode())) {
+                    queue.poll();
+                    queue.add(new NodeValueEntry(user, cnt));
+                }
+            }
+        }
 
-    response.setStatus(HttpStatus.OK_200);
-    response.getWriter().println("[\n" + JOINER.join(Lists.reverse(entries)) + "\n]");
-  }
+        if (queue.size() == 0) {
+            response.getWriter().println("[]\n");
+            return;
+        }
+
+        NodeValueEntry e;
+        List<String> entries = new ArrayList<>(queue.size());
+        while ((e = queue.poll()) != null) {
+            // Note that we explicitly use id_str and treat the tweet id as a String. See:
+            // https://dev.twitter.com/overview/api/twitter-ids-json-and-snowflake
+            entries.add(String.format("{\"id_str\": \"%d\", \"cnt\": %d}", e.getNode(), (int) e.getValue()));
+        }
+
+        response.setStatus(HttpStatus.OK_200);
+        response.getWriter().println("[\n" + JOINER.join(Lists.reverse(entries)) + "\n]");
+    }
 }
