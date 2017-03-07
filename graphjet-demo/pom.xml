@@ -99,6 +99,31 @@
       <artifactId>gson</artifactId>
       <version>2.6.2</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore-nio</artifactId>
+      <version>4.4.5</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpasyncclient</artifactId>
+      <version>4.1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.spr.lucene-core</groupId>
+      <artifactId>lucene-core</artifactId>
+      <version>4.10.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.spr.lucene-analyzers-common</groupId>
+      <artifactId>lucene-analyzers-common</artifactId>
+      <version>4.10.2</version>
+    </dependency>
 
   </dependencies>
 

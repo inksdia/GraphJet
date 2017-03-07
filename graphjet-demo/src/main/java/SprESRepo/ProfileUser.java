@@ -4,13 +4,22 @@ package SprESRepo;
  * Created by saurav on 06/03/17.
  */
 public class ProfileUser {
-    String Id;
+    Long Id;
+    String name;
 
-    public String getId() {
+    public Long getId() {
         return Id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         Id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
