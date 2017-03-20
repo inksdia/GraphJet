@@ -30,18 +30,19 @@ public class EsGraphIngestor {
     public static Graph graph;
     public static Long2ObjectOpenHashMap<ProfileUser> users = new Long2ObjectOpenHashMap<>();
     public static LongOpenHashSet tweets = new LongOpenHashSet();
-    public static Long2ObjectOpenHashMap<String> hashtags;
-    int statusCnt = 0;
+    public static Long2ObjectOpenHashMap<String> hashtags = new Long2ObjectOpenHashMap<>();
+    static int statusCnt = 0;
     public static int minorUpdateInterval = 1000;
     public static int majorUpdateInterval = 10000;
     private static Date start;
 
-    public void indexMessage(Message message) {
+    public static void indexMessage(Message message) {
+        System.out.println(message);
         ProfileUser user = message.getUser();
         long userId = message.getUser().getId();
         long tweetId = message.getId();
-        long resolvedTweetId = message. ? message.getRetweetId() : message.getId();
-        HashtagEntity[] hashtagEntities = status.getHashtagEntities();
+        long resolvedTweetId = message.isRetweet() ? message.getRetweetId() : message.getId();
+        HashtagEntity[] hashtagEntities = message.getHashTags();
 
         userTweetBigraph.addEdge(userId, resolvedTweetId, (byte) 0);
         graph.addLink(message);
@@ -161,20 +162,19 @@ public class EsGraphIngestor {
 
         start = new Date();
         graph = new Graph();
-        final MultiSegmentPowerLawBipartiteGraph userTweetBigraph =
+        userTweetBigraph =
                 new MultiSegmentPowerLawBipartiteGraph(args.maxSegments, args.maxEdgesPerSegment,
                         args.leftSize, args.leftDegree, args.leftPowerLawExponent,
                         args.rightSize, args.rightDegree, args.rightPowerLawExponent,
                         new IdentityEdgeTypeMask(),
                         new NullStatsReceiver());
 
-        final MultiSegmentPowerLawBipartiteGraph tweetHashtagBigraph =
+        tweetHashtagBigraph =
                 new MultiSegmentPowerLawBipartiteGraph(args.maxSegments, args.maxEdgesPerSegment,
                         args.leftSize, args.leftDegree, args.leftPowerLawExponent,
                         args.rightSize, args.rightDegree, args.rightPowerLawExponent,
                         new IdentityEdgeTypeMask(),
                         new NullStatsReceiver());
-
 
         // Note that we're keeping track of the nodes on the left and right sides externally, apart from the bigraphs,
         // because the bigraph currently does not provide an API for enumerating over nodes. Currently, this is liable to
@@ -182,7 +182,7 @@ public class EsGraphIngestor {
         // It is accurate of think of these two data structures as holding all users and tweets observed on the stream since
         // the demo program was started.
 
-        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        ServletContextImpl context = new ServletContextImpl(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
 
         Server jettyServer = new Server(args.port);
@@ -204,8 +204,6 @@ public class EsGraphIngestor {
                 "/tweetHashtagGraphEdges/tweets");
         context.addServlet(new ServletHolder(new GetEdgesServlet(tweetHashtagBigraph, GetEdgesServlet.Side.RIGHT)),
                 "/tweetHashtagGraphEdges/hashtags");
-        context.addServlet(new ServletHolder(new GetSimilarHashtagsServlet(tweetHashtagBigraph, hashtags)),
-                "/similarHashtags");
         context.addServlet(new ServletHolder(new GetSimilarHashtagsServlet(tweetHashtagBigraph, hashtags)),
                 "/similarHashtags");
 

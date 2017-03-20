@@ -20,12 +20,7 @@ import SprESRepo.ProfileUser;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.twitter.graphjet.bipartite.MultiSegmentPowerLawBipartiteGraph;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongIterator;
 import org.eclipse.jetty.http.HttpStatus;
-import org.eclipse.jetty.util.log.Log;
-import sun.java2d.cmm.Profile;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -90,7 +85,7 @@ public class TopUsersServlet extends HttpServlet {
         while ((e = queue.poll()) != null) {
             // Note that we explicitly use id_str and treat the tweet id as a String. See:
             // https://dev.twitter.com/overview/api/twitter-ids-json-and-snowflake
-            entries.add(String.format("{\"id_str\": \"%d\", \"cnt\": %d}", e.getNode(), (int) e.getValue()));
+            entries.add(String.format("{\"Users\": " + users.get(e.getNode()) + ",\"cnt\":" + (int) e.getValue() + "}"));
         }
 
         response.setStatus(HttpStatus.OK_200);

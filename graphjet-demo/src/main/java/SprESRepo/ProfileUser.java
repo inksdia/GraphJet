@@ -22,4 +22,12 @@ public class ProfileUser {
     public void setName(String name) {
         this.name = name;
     }
+
+    @Override
+    public String toString() {
+        return "ProfileUser{" +
+                "Id=" + Id +
+                ", name='" + name + '\'' +
+                '}';
+    }
 }

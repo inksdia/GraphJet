@@ -16,33 +16,7 @@
 
 package com.twitter.graphjet.demo;
 
-import SprESRepo.Message;
-import SprESRepo.ProfileUser;
-import com.twitter.graphjet.bipartite.MultiSegmentPowerLawBipartiteGraph;
-import com.twitter.graphjet.bipartite.segment.IdentityEdgeTypeMask;
-import com.twitter.graphjet.stats.NullStatsReceiver;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
-import org.kohsuke.args4j.ParserProperties;
-import sun.java2d.cmm.Profile;
-import sun.plugin.util.UserProfile;
-import twitter4j.HashtagEntity;
-import twitter4j.StallWarning;
-import twitter4j.Status;
-import twitter4j.StatusDeletionNotice;
-import twitter4j.StatusListener;
-import twitter4j.TwitterStream;
-import twitter4j.TwitterStreamFactory;
-
-import javax.servlet.Servlet;
-import java.util.Date;
 
 /**
  * Demo of GraphJet. This program uses Twitter4j to read from the streaming API, where it observes status messages to
@@ -94,6 +68,7 @@ public class TwitterStreamReader {
     }
 
     public static void main(String[] argv) throws Exception {
+        /*
         final TwitterStreamReaderArgs args = new TwitterStreamReaderArgs();
 
         CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(90));
@@ -125,7 +100,7 @@ public class TwitterStreamReader {
         // Note that we're keeping track of the nodes on the left and right sides externally, apart from the bigraphs,
         // because the bigraph currently does not provide an API for enumerating over nodes. Currently, this is liable to
         // running out of memory, but this is fine for the demo.
-        Long2ObjectOpenHashMap<String> users = new Long2ObjectOpenHashMap<>();
+        Long2ObjectOpenHashMap<ProfileUser> users = new Long2ObjectOpenHashMap<>();
         LongOpenHashSet tweets = new LongOpenHashSet();
         Long2ObjectOpenHashMap<String> hashtags = new Long2ObjectOpenHashMap<>();
         // It is accurate of think of these two data structures as holding all users and tweets observed on the stream since
@@ -255,6 +230,7 @@ public class TwitterStreamReader {
         } finally {
             jettyServer.destroy();
         }
+        */
     }
 
 }
