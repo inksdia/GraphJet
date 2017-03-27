@@ -1,5 +1,8 @@
-package SprESRepo;
+package com.spr.service;
 
+import SprESRepo.HashTag;
+import SprESRepo.Message;
+import SprESRepo.ProfileUser;
 import com.google.common.base.Splitter;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.search.SearchRequestBuilder;

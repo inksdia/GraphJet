@@ -2,5 +2,9 @@ target/
 *~
 *.iml
 .idea
-
-
+*/build/
+.DS_Store
+build/
+*/.DS_Store
+out/
+sprinklr/lib/

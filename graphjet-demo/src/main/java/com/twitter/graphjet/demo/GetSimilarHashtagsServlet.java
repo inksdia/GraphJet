@@ -13,32 +13,37 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import org.eclipse.jetty.http.HttpStatus;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Random;
 
 /**
  * Servlet of {@link TwitterStreamReader} that computes similar hashtags in a tweet-hashtag bipartite graph.
  */
 
-public class GetSimilarHashtagsServlet extends HttpServlet {
-    private final MultiSegmentPowerLawBipartiteGraph bigraph;
-    private final Long2ObjectOpenHashMap<String> hashtags;
+public class GetSimilarHashtagsServlet extends AbstractServlet {
 
-    public GetSimilarHashtagsServlet(MultiSegmentPowerLawBipartiteGraph bigraph, Long2ObjectOpenHashMap<String> hashtags) {
-        this.bigraph = bigraph;
-        this.hashtags = hashtags;
+    public GetSimilarHashtagsServlet(Map<String, SprGraph> graphs) {
+        super(graphs);
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String hashtag= request.getParameter("hashtag").toLowerCase();
+
+        if (checkIdentifier(request, response)) {
+            return;
+        }
+
+        final MultiSegmentPowerLawBipartiteGraph bigraph = sprGraph.tweetHashtagBigraph;
+        final Long2ObjectOpenHashMap<String> hashtags = sprGraph.hashtags;
+
+        String hashtag = request.getParameter("hashtag").toLowerCase();
         String numResults = request.getParameter("k");
 
-        long id = (long)hashtag.hashCode();
+        long id = (long) hashtag.hashCode();
         int k = 10;
         int maxNumNeighbors = 100;
         int minNeighborDegree = 1;

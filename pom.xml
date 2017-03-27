@@ -94,6 +94,7 @@
             </goals>
             <configuration>
               <additionalparam>-Xdoclint:none</additionalparam>
+              <outputDirectory>build</outputDirectory>
             </configuration>
           </execution>
         </executions>
@@ -105,6 +106,8 @@
     <module>graphjet-core</module>
     <module>graphjet-adapters</module>
     <module>graphjet-demo</module>
+    <module>../sprinklr-core</module>
+    <module>sprinklr-core</module>
   </modules>
 
 </project>

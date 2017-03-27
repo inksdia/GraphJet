@@ -1,5 +1,6 @@
-package SprESRepo;
+package com.spr.container;
 
+import SprESRepo.Message;
 import org.elasticsearch.common.collect.Tuple;
 
 import java.util.ArrayList;
@@ -8,42 +9,42 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by dekorate on 06/03/17.
+ * Created by saurav on 27/03/17.
  */
-public class Graph {
-    Map<Long, ProfileUser> userProfileMap;
-    Map<Long, Message> messages;
-    List<Tuple<Long, Long>> links;
+public class GraphHolder {
+    private Map<Long, SprESRepo.ProfileUser> userProfileMap;
+    private Map<Long, SprESRepo.Message> messages;
+    private List<Tuple<Long, Long>> links;
 
-    public Graph() {
+    public GraphHolder() {
         this.userProfileMap = new HashMap<>();
         this.messages = new HashMap<>();
         this.links = new ArrayList<>();
     }
 
-    public Graph(Map<Long, ProfileUser> userProfileMap, Map<Long, Message> messages, List<Tuple<Long, Long>> edges) {
+    public GraphHolder(Map<Long, SprESRepo.ProfileUser> userProfileMap, Map<Long, SprESRepo.Message> messages, List<Tuple<Long, Long>> edges) {
         this.userProfileMap = userProfileMap;
         this.messages = messages;
         this.links = edges;
     }
 
-    public void addLink(Message message) {
-        ProfileUser user = message.getUser();
+    public void addLink(SprESRepo.Message message) {
+        SprESRepo.ProfileUser user = message.getUser();
         this.userProfileMap.put(user.getId(), user);
         this.messages.put(message.getId(), message);
         this.links.add(Tuple.tuple(user.getId(), message.getId()));
     }
 
 
-    public Map<Long, ProfileUser> getUserProfileMap() {
+    public Map<Long, SprESRepo.ProfileUser> getUserProfileMap() {
         return userProfileMap;
     }
 
-    public void setUserProfileMap(Map<Long, ProfileUser> userProfileMap) {
+    public void setUserProfileMap(Map<Long, SprESRepo.ProfileUser> userProfileMap) {
         this.userProfileMap = userProfileMap;
     }
 
-    public Map<Long, Message> getMessages() {
+    public Map<Long, SprESRepo.Message> getMessages() {
         return messages;
     }
 

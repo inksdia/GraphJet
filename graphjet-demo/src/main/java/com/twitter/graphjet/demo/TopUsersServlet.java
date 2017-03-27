@@ -23,7 +23,6 @@ import com.twitter.graphjet.bipartite.MultiSegmentPowerLawBipartiteGraph;
 import org.eclipse.jetty.http.HttpStatus;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -33,19 +32,24 @@ import java.util.*;
  * Servlet of {@link TwitterStreamReader} that returns the top <i>k</i> users in terms of degree in the user-tweet
  * bipartite graph.
  */
-public class TopUsersServlet extends HttpServlet {
+public class TopUsersServlet extends AbstractServlet {
     private static final Joiner JOINER = Joiner.on(",\n");
-    private final MultiSegmentPowerLawBipartiteGraph bigraph;
-    private final Map<Long, ProfileUser> users;
 
-    public TopUsersServlet(MultiSegmentPowerLawBipartiteGraph bigraph, Map<Long, ProfileUser> users) {
-        this.bigraph = bigraph;
-        this.users = users;
+    public TopUsersServlet(Map<String, SprGraph> graphs) {
+        super(graphs);
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
+        if (checkIdentifier(request, response)) {
+            return;
+        }
+
+        final MultiSegmentPowerLawBipartiteGraph bigraph = sprGraph.userTweetBigraph;
+        final Map<Long, ProfileUser> users = sprGraph.graph.getUserProfileMap();
+
         int k = 10;
         String p = request.getParameter("k");
         if (p != null) {
