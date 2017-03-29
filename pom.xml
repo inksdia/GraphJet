@@ -105,6 +105,7 @@
     <module>graphjet-core</module>
     <module>graphjet-adapters</module>
     <module>graphjet-demo</module>
+    <module>ui</module>
   </modules>
 
 </project>
