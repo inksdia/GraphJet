@@ -1,5 +1,6 @@
 package com.graph.rest;
 
+import com.google.gson.Gson;
 import com.graph.Impl.GraphJetServiceImpl;
 import com.graph.Utils.Preconditions;
 import com.graph.helper;
@@ -21,6 +22,7 @@ import java.io.FileNotFoundException;
 public class GraphJetRestAPI {
 
     private final Logger logger = LoggerFactory.getLogger(GraphJetRestAPI.class);
+    final Gson gson = new Gson();
 
     private GraphJetService graphJetService = new GraphJetServiceImpl();
 
@@ -29,7 +31,7 @@ public class GraphJetRestAPI {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response welcome() {
         logger.debug("for testing REST API");
-        return Response.ok("Welcome").build();
+        return generateResponse("Welcome");
     }
 
     @POST
@@ -38,7 +40,7 @@ public class GraphJetRestAPI {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createGraph() {
         logger.debug("Request to create new Graph");
-        return Response.ok(graphJetService.createGraph()).build();
+        return generateResponse(graphJetService.createGraph());
     }
 
     @POST
@@ -51,7 +53,7 @@ public class GraphJetRestAPI {
         insertEdgeDTO.setMessages(helper.getMessages());
         logger.debug("Post call for Edge Insertion" + insertEdgeDTO);
         Preconditions.notNull(insertEdgeDTO, "EdgeDto can't be null");
-        return Response.ok(graphJetService.insertEdge(insertEdgeDTO)).build();
+        return generateResponse(graphJetService.insertEdge(insertEdgeDTO));
     }
 
     @GET
@@ -59,16 +61,16 @@ public class GraphJetRestAPI {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response topUsers(@QueryParam("count") int count) {
-        return Response.ok(graphJetService.topUsers(count)).build();
+        return generateResponse(graphJetService.topUsers(count));
     }
 
     @GET
-    @Path("/topMessagesByUserId")
+    @Path("/topMessagesByUserId/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response topMessage(@QueryParam("count") int count) {
+    public Response topMessage(@PathParam("userId") Long userId, @QueryParam("count") int count) {
         logger.debug("Request for top Messages");
-        return Response.ok(graphJetService.topMessages(count)).build();
+        return generateResponse(graphJetService.topMessagesByUserId(userId, count));
     }
 
     @GET
@@ -77,7 +79,7 @@ public class GraphJetRestAPI {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response topHashtags(@QueryParam("count") int count) {
         logger.debug("Request for top Hashtags");
-        return Response.ok(graphJetService.topHashTags(count)).build();
+        return generateResponse(graphJetService.topHashTags(count));
     }
 
     @GET
@@ -86,7 +88,7 @@ public class GraphJetRestAPI {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response topUserMessage(@PathParam("userId") Long userId, @QueryParam("count") int count) {
         logger.debug("Request for top " + count + " tweets by " + userId);
-        return Response.ok(graphJetService.topMessagesByUserId(userId, count)).build();
+        return generateResponse(graphJetService.topMessagesByUserId(userId, count));
     }
 
     @GET
@@ -95,7 +97,11 @@ public class GraphJetRestAPI {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response topTweetsUser(@PathParam("msgId") Long msgId, @QueryParam("count") int count) {
         logger.debug("Request for top " + count + " user related/connected to " + msgId + "tweets");
-        return Response.ok(graphJetService.topUsersByMsgId(msgId, count)).build();
+        return generateResponse(graphJetService.topUsersByMsgId(msgId, count));
+    }
+
+    private <T> Response generateResponse(T obj) {
+        return Response.ok(gson.toJson(obj)).build();
     }
 
 }
