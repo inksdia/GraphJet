@@ -112,11 +112,13 @@ public class Graph {
             tweets.put(resolvedTweetId, message);
         }
 
-        for (HashtagEntity entity : hashtagEntities) {
-            long hashtagHash = (long) entity.getText().toLowerCase().hashCode();
-            tweetHashtagBigraph.addEdge(tweetId, hashtagHash, (byte) 0);
-            if (!hashtags.containsKey(hashtagHash)) {
-                hashtags.put(hashtagHash, new HashTag(hashtagHash, entity.getText().toLowerCase()));
+        if (hashtagEntities != null) {
+            for (HashtagEntity entity : hashtagEntities) {
+                long hashtagHash = (long) entity.getText().toLowerCase().hashCode();
+                tweetHashtagBigraph.addEdge(tweetId, hashtagHash, (byte) 0);
+                if (!hashtags.containsKey(hashtagHash)) {
+                    hashtags.put(hashtagHash, new HashTag(hashtagHash, entity.getText().toLowerCase()));
+                }
             }
         }
 

@@ -2,6 +2,7 @@ package com.graph.service;
 
 import com.graph.beans.Message;
 import com.graph.container.Graph;
+import org.apache.commons.lang.time.StopWatch;
 
 import java.util.List;
 
@@ -24,6 +25,10 @@ public class EdgeInsertion implements Runnable {
         if (this.messages == null) {
             return;
         }
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         this.messages.forEach(graph::indexMessage);
+        stopWatch.stop();
+        System.out.println("Time to ingest: " + messages.size() + " " + stopWatch.getTime());
     }
 }

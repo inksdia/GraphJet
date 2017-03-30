@@ -3,12 +3,13 @@ package com.graph.rest;
 
 import com.graph.beans.Message;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Created by saurav on 27/03/17.
  */
-public class IngestMessageDTO {
+public class IngestMessageDTO implements Serializable {
 
     private List<Message> messages;
 

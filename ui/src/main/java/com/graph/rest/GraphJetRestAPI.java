@@ -1,9 +1,9 @@
 package com.graph.rest;
 
 import com.google.gson.Gson;
+import com.graph.Helper;
 import com.graph.Impl.GraphJetServiceImpl;
 import com.graph.Utils.Preconditions;
-import com.graph.Helper;
 import com.graph.service.GraphJetService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  * Created by saurav on 29/03/17.
@@ -47,13 +47,52 @@ public class GraphJetRestAPI {
     @Path("/insert")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response insertEdge(IngestMessageDTO ingestMessageDTO) throws FileNotFoundException {
+    public Response insertEdge(final IngestMessageDTO dto) throws IOException {
         //For testing
-        ingestMessageDTO = new IngestMessageDTO();
-        ingestMessageDTO.setMessages(Helper.getMessages());
-        logger.debug("Post call for Edge Insertion" + ingestMessageDTO);
-        Preconditions.notNull(ingestMessageDTO, "EdgeDto can't be null");
-        return generateResponse(graphJetService.insertEdge(ingestMessageDTO));
+        for (int i = 0; i < 100000; i += 10000) {
+            final IngestMessageDTO ingestMessageDTO = new IngestMessageDTO();
+            try {
+                ingestMessageDTO.setMessages(Helper.getMessages(i));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            logger.debug("Post call for Edge Insertion" + ingestMessageDTO);
+            Preconditions.notNull(ingestMessageDTO, "EdgeDto can't be null");
+            graphJetService.insertEdge(ingestMessageDTO);
+        }
+
+        /*new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 100000; i += 10000) {
+                    final IngestMessageDTO ingestMessageDTO = new IngestMessageDTO();
+                    try {
+                        ingestMessageDTO.setMessages(Helper.getMessages(i));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    logger.debug("Post call for Edge Insertion" + ingestMessageDTO);
+                    Preconditions.notNull(ingestMessageDTO, "EdgeDto can't be null");
+                    graphJetService.insertEdge(ingestMessageDTO);
+                }
+            }
+        }).start();*//*new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 100000; i += 10000) {
+                    final IngestMessageDTO ingestMessageDTO = new IngestMessageDTO();
+                    try {
+                        ingestMessageDTO.setMessages(Helper.getMessages(i));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    logger.debug("Post call for Edge Insertion" + ingestMessageDTO);
+                    Preconditions.notNull(ingestMessageDTO, "EdgeDto can't be null");
+                    graphJetService.insertEdge(ingestMessageDTO);
+                }
+            }
+        }).start();*/
+        return generateResponse("Graph creation started");
     }
 
     @GET

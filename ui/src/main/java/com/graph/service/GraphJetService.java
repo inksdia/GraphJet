@@ -4,9 +4,8 @@ import com.graph.beans.HashTag;
 import com.graph.beans.Message;
 import com.graph.beans.ProfileUser;
 import com.graph.rest.IngestMessageDTO;
-import it.unimi.dsi.fastutil.Hash;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * Created by saurav on 27/03/17.
@@ -15,23 +14,23 @@ public interface GraphJetService {
 
     String insertEdge(IngestMessageDTO ingestMessageDTO);
 
-    String createGraph();
+    String createGraph(String identifier);
 
-    List<ProfileUser> topUsers(int count);
+    Map<ProfileUser, Long> topUsers(int count);
 
-    List<Message> topMessages(int count);
+    Map<Message, Long> topMessages(int count);
 
-    List<HashTag> topHashTags(int count);
+    Map<HashTag, Long> topHashTags(int count);
 
-    List<Message> topMessagesByUserId(Long userId, int count);
+    Map<Message, Long> topMessagesByUserId(Long userId, int count);
 
-    List<ProfileUser> topUsersByMsgId(Long msgId, int count);
+    Map<ProfileUser, Long> topUsersByMsgId(Long msgId, int count);
 
-    List<HashTag> topMessagesByHashTags(Long hashTagId, int count);
+    Map<HashTag, Long> topMessagesByHashTags(Long hashTagId, int count);
 
-    List<Message> topHashTagsByTweets(Long msgId);
+    Map<Message, Long> topHashTagsByTweets(Long msgId);
 
-    List<ProfileUser> topInfluencers(int count);
+    Map<ProfileUser, Long> topInfluencers(int count);
 
-    List<HashTag> similarHashTags(String hashTagId, int count);
+    Map<HashTag, Long> similarHashTags(String hashTagId, int count);
 }

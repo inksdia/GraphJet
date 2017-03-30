@@ -43,7 +43,7 @@ public class GraphJetServiceImpl implements GraphJetService {
     @Override
     public String insertEdge(IngestMessageDTO ingestMessageDTO) {
         try {
-            new Thread(new EdgeInsertion(getGraph(), ingestMessageDTO.getMessages())).start();
+            new EdgeInsertion(getGraph(), ingestMessageDTO.getMessages()).run();
         } catch (Throwable throwable) {
             logger.error("Unexpected error while getting graph", throwable);
             return "Unexpected error occurred, check graph";
@@ -54,15 +54,18 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public String createGraph() {
-        return null;
+    public String createGraph(String identifier) {
+        Graph graph = new Graph();
+        GraphOps.getInstance().addGraph(identifier, graph);
+        logger.error("Graph created with Identifier:" + identifier);
+        return identifier;
     }
 
     @Override
-    public List<ProfileUser> topUsers(int count) {
+    public Map<ProfileUser, Long> topUsers(int count) {
         try {
             Iterator<Long> iter = getGraph().users.keySet().iterator();
-            List<Long> ids = getTopEntities(iter, true, getGraph().userTweetBigraph, count, false);
+            Map<Long, Long> ids = getTopEntities(iter, true, getGraph().userTweetBigraph, count, false);
             return findEntitiesByIds(ids, getGraph().users);
         } catch (Throwable e) {
 
@@ -71,10 +74,10 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public List<Message> topMessages(int count) {
+    public Map<Message, Long> topMessages(int count) {
         try {
             Iterator<Long> iter = getGraph().tweets.keySet().iterator();
-            List<Long> ids = getTopEntities(iter, false, getGraph().userTweetBigraph, count, false);
+            Map<Long, Long> ids = getTopEntities(iter, false, getGraph().userTweetBigraph, count, false);
             return findEntitiesByIds(ids, getGraph().tweets);
         } catch (Throwable e) {
 
@@ -83,10 +86,10 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public List<HashTag> topHashTags(int count) {
+    public Map<HashTag, Long> topHashTags(int count) {
         try {
             Iterator<Long> iter = getGraph().hashtags.keySet().iterator();
-            List<Long> ids = getTopEntities(iter, false, getGraph().tweetHashtagBigraph, count, false);
+            Map<Long, Long> ids = getTopEntities(iter, false, getGraph().tweetHashtagBigraph, count, false);
             return findEntitiesByIds(ids, getGraph().hashtags);
         } catch (Throwable e) {
 
@@ -95,9 +98,9 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public List<Message> topMessagesByUserId(Long userId, int count) {
+    public Map<Message, Long> topMessagesByUserId(Long userId, int count) {
         try {
-            List<Long> ids = getTopEntities(userId, true, getGraph().userTweetBigraph);
+            Map<Long, Long> ids = getTopEntities(userId, true, getGraph().userTweetBigraph);
             //trim by count or change getTopEntities method, will see
             return findEntitiesByIds(ids, getGraph().tweets);
         } catch (Throwable t) {
@@ -107,9 +110,9 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public List<ProfileUser> topUsersByMsgId(Long msgId, int count) {
+    public Map<ProfileUser, Long> topUsersByMsgId(Long msgId, int count) {
         try {
-            List<Long> ids = getTopEntities(msgId, false, getGraph().userTweetBigraph);
+            Map<Long, Long> ids = getTopEntities(msgId, false, getGraph().userTweetBigraph);
             return findEntitiesByIds(ids, getGraph().users);
         } catch (Throwable t) {
 
@@ -118,9 +121,9 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public List<HashTag> topMessagesByHashTags(Long hashTagId, int count) {
+    public Map<HashTag, Long> topMessagesByHashTags(Long hashTagId, int count) {
         try {
-            List<Long> ids = getTopEntities(hashTagId, true, getGraph().tweetHashtagBigraph);
+            Map<Long, Long> ids = getTopEntities(hashTagId, true, getGraph().tweetHashtagBigraph);
             return findEntitiesByIds(ids, getGraph().hashtags);
         } catch (Throwable t) {
 
@@ -129,9 +132,9 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public List<Message> topHashTagsByTweets(Long msgId) {
+    public Map<Message, Long> topHashTagsByTweets(Long msgId) {
         try {
-            List<Long> ids = getTopEntities(msgId, true, getGraph().tweetHashtagBigraph);
+            Map<Long, Long> ids = getTopEntities(msgId, true, getGraph().tweetHashtagBigraph);
             return findEntitiesByIds(ids, getGraph().tweets);
         } catch (Throwable t) {
 
@@ -141,7 +144,7 @@ public class GraphJetServiceImpl implements GraphJetService {
 
 
     @Override
-    public List<HashTag> similarHashTags(String hashTag, int count) {
+    public Map<HashTag, Long> similarHashTags(String hashTag, int count) {
         try {
             return getSimilarHashTags(hashTag, count, getGraph().tweetHashtagBigraph, getGraph().hashtags);
         } catch (Throwable throwable) {
@@ -151,10 +154,10 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public List<ProfileUser> topInfluencers(int count) {
+    public Map<ProfileUser, Long> topInfluencers(int count) {
         try {
             Iterator<Long> iter = getGraph().users.keySet().iterator();
-            List<Long> ids = getTopEntities(iter, true, getGraph().userTweetBigraph, count, true);
+            Map<Long, Long> ids = getTopEntities(iter, true, getGraph().userTweetBigraph, count, true);
             return findEntitiesByIds(ids, getGraph().users);
         } catch (Throwable throwable) {
             throwable.printStackTrace();
@@ -162,7 +165,7 @@ public class GraphJetServiceImpl implements GraphJetService {
         return null;
     }
 
-    private List<HashTag> getSimilarHashTags(String hashTag, int count, final MultiSegmentPowerLawBipartiteGraph bigraph, Long2ObjectOpenHashMap<HashTag> hashTags) {
+    private Map<HashTag, Long> getSimilarHashTags(String hashTag, int count, final MultiSegmentPowerLawBipartiteGraph bigraph, Long2ObjectOpenHashMap<HashTag> hashTags) {
         Long id = Long.valueOf(hashTag);
         int maxNumNeighbors = 100;
         int minNeighborDegree = 1;
@@ -174,7 +177,7 @@ public class GraphJetServiceImpl implements GraphJetService {
 
         if (bigraph.getRightNodeDegree(id) == 0) {
             logger.debug("Hashtag #%s not found", hashTag);
-            return Collections.EMPTY_LIST;
+            return Collections.EMPTY_MAP;
         }
 
         logger.debug("Running similarity for node " + id);
@@ -198,10 +201,10 @@ public class GraphJetServiceImpl implements GraphJetService {
                 cosineSimilarity.getSimilarNodes(intersectionSimilarityRequest, new Random());
         ;
         logger.debug("Related hashtags for hashtag: " + hashTag);
-        List<HashTag> similarHashTags = new ArrayList<>();
+        Map<HashTag, Long> similarHashTags = new HashMap<>();
         for (SimilarityInfo sim : similarityResponse.getRankedSimilarNodes()) {
             logger.debug(hashTags.get(sim.getSimilarNode()) + ": " + sim.toString());
-            similarHashTags.add(hashTags.get(sim.getSimilarNode()));
+            similarHashTags.put(hashTags.get(sim.getSimilarNode()), Long.valueOf(sim.getCooccurrence()));
         }
         return similarHashTags;
     }
@@ -215,13 +218,15 @@ public class GraphJetServiceImpl implements GraphJetService {
      * @param bigraph
      * @return
      */
-    private List<Long> getTopEntities(final Long id, final boolean side, final MultiSegmentPowerLawBipartiteGraph bigraph) {
-        List<Long> entities = new ArrayList<>();
+    private Map<Long, Long> getTopEntities(final Long id, final boolean side, final MultiSegmentPowerLawBipartiteGraph bigraph) {
+        Map<Long, Long> entities = new HashMap<>();
         EdgeIterator iter = side ? bigraph.getLeftNodeEdges(id) : bigraph.getRightNodeEdges(id);
 
         if (iter != null) {
             while (iter.hasNext()) {
-                entities.add(iter.nextLong());
+                long currId = iter.nextLong();
+                long cnt = !side ? bigraph.getLeftNodeDegree(currId) : bigraph.getRightNodeDegree(currId);
+                entities.put(iter.nextLong(), cnt);
             }
         }
         return entities;
@@ -263,7 +268,7 @@ public class GraphJetServiceImpl implements GraphJetService {
      * @return
      */
     @SuppressWarnings("Duplicates")
-    private List<Long> getTopEntities(Iterator<Long> iter, final boolean side, final MultiSegmentPowerLawBipartiteGraph bigraph, int count, boolean secondOrder) {
+    private Map<Long, Long> getTopEntities(Iterator<Long> iter, final boolean side, final MultiSegmentPowerLawBipartiteGraph bigraph, int count, boolean secondOrder) {
 
         PriorityQueue<NodeValueEntry> queue = new PriorityQueue<>(count);
         while (iter.hasNext()) {
@@ -285,13 +290,13 @@ public class GraphJetServiceImpl implements GraphJetService {
         }
 
         if (queue.size() == 0) {
-            return Collections.EMPTY_LIST;
+            return Collections.EMPTY_MAP;
         }
 
         NodeValueEntry e;
-        List<Long> entries = new ArrayList<>(queue.size());
+        Map<Long, Long> entries = new HashMap<>(queue.size());
         while ((e = queue.poll()) != null) {
-            entries.add(e.getNode());
+            entries.put(e.getNode(), (long) e.getValue());
         }
         return entries;
 
@@ -305,18 +310,30 @@ public class GraphJetServiceImpl implements GraphJetService {
      * @param <T>
      * @return
      */
-    private <T> List<T> findEntitiesByIds(List<Long> ids, Long2ObjectOpenHashMap<T> hashMap) {
-        List<T> entities = new ArrayList<>();
-        for (Long id : ids) {
-            T obj = hashMap.get(id);
+    private <T> Map<T, Long> findEntitiesByIds(Map<Long, Long> ids, Long2ObjectOpenHashMap<T> hashMap) {
+        ids = sortByValue(ids);
+        Map<T, Long> entities = new LinkedHashMap<>();
+        for (Map.Entry<Long, Long> entry : ids.entrySet()) {
+            T obj = hashMap.get(entry.getKey());
             if (obj instanceof Message) {
                 Long resolvedId = getResolvedId((Message) obj);
-                entities.add(hashMap.get(resolvedId));
+                entities.put(hashMap.get(resolvedId), entry.getValue());
             } else {
-                entities.add(hashMap.get(id));
+                entities.put(hashMap.get(entry.getKey()), entry.getValue());
             }
         }
         return entities;
+    }
+
+    private Map<Long, Long> sortByValue(Map<Long, Long> map) {
+        List<Map.Entry<Long, Long>> list = new LinkedList<>(map.entrySet());
+        Collections.sort(list, (o1, o2) -> -1 * o1.getValue().compareTo(o2.getValue()));
+
+        Map<Long, Long> result = new LinkedHashMap<>();
+        for (Map.Entry<Long, Long> entry : list) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+        return result;
     }
 
     private Long getResolvedId(Message msg) {
