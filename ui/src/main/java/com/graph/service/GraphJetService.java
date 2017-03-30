@@ -3,7 +3,8 @@ package com.graph.service;
 import com.graph.beans.HashTag;
 import com.graph.beans.Message;
 import com.graph.beans.ProfileUser;
-import com.graph.rest.InsertEdgeDTO;
+import com.graph.rest.IngestMessageDTO;
+import it.unimi.dsi.fastutil.Hash;
 
 import java.util.List;
 
@@ -12,7 +13,7 @@ import java.util.List;
  */
 public interface GraphJetService {
 
-    String insertEdge(InsertEdgeDTO insertEdgeDTO);
+    String insertEdge(IngestMessageDTO ingestMessageDTO);
 
     String createGraph();
 
@@ -29,4 +30,6 @@ public interface GraphJetService {
     List<HashTag> topMessagesByHashTags(Long hashTagId, int count);
 
     List<Message> topHashTagsByTweets(Long msgId);
+
+    List<HashTag> similarHashTags(String hashTagId, int count);
 }

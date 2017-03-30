@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by saurav on 27/03/17.
  */
-public class InsertEdgeDTO {
+public class IngestMessageDTO {
 
     private List<Message> messages;
 

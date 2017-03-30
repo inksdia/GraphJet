@@ -47,13 +47,13 @@ public class GraphJetRestAPI {
     @Path("/insert")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response insertEdge(InsertEdgeDTO insertEdgeDTO) throws FileNotFoundException {
+    public Response insertEdge(IngestMessageDTO ingestMessageDTO) throws FileNotFoundException {
         //For testing
-        insertEdgeDTO = new InsertEdgeDTO();
-        insertEdgeDTO.setMessages(helper.getMessages());
-        logger.debug("Post call for Edge Insertion" + insertEdgeDTO);
-        Preconditions.notNull(insertEdgeDTO, "EdgeDto can't be null");
-        return generateResponse(graphJetService.insertEdge(insertEdgeDTO));
+        ingestMessageDTO = new IngestMessageDTO();
+        ingestMessageDTO.setMessages(helper.getMessages());
+        logger.debug("Post call for Edge Insertion" + ingestMessageDTO);
+        Preconditions.notNull(ingestMessageDTO, "EdgeDto can't be null");
+        return generateResponse(graphJetService.insertEdge(ingestMessageDTO));
     }
 
     @GET
@@ -99,6 +99,37 @@ public class GraphJetRestAPI {
         logger.debug("Request for top " + count + " user related/connected to " + msgId + "tweets");
         return generateResponse(graphJetService.topUsersByMsgId(msgId, count));
     }
+
+    @GET
+    @Path("/similarHashTags/{hashTag}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response similarHashTags(@PathParam("hashTag") String hashTag, @QueryParam("count") int count) {
+        logger.debug("Request for similar " + count + " hashtags for hashtag" + hashTag);
+        Preconditions.notBlank(hashTag);
+        return generateResponse(graphJetService.similarHashTags(hashTag, count));
+    }
+
+    @GET
+    @Path("/topHashTagMessages/{hashTag}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response topHashTagMessages(@PathParam("hashTag") String hashTag, @QueryParam("count") int count) {
+        logger.debug("Request for similar " + count + " hashtags for hashtag" + hashTag);
+        Preconditions.notBlank(hashTag);
+        Long hashTagId = Long.valueOf(hashTag.hashCode());
+        return generateResponse(graphJetService.topMessagesByHashTags(hashTagId, count));
+    }
+
+    @GET
+    @Path("/topMessages")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response topTweets(@QueryParam("count") int count) {
+        logger.debug("Request for top " + count + " users");
+        return generateResponse(graphJetService.topMessages(count));
+    }
+
 
     private <T> Response generateResponse(T obj) {
         return Response.ok(gson.toJson(obj)).build();

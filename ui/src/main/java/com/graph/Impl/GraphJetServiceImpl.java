@@ -5,13 +5,21 @@ import com.graph.beans.Message;
 import com.graph.beans.NodeValueEntry;
 import com.graph.beans.ProfileUser;
 import com.graph.container.Graph;
-import com.graph.rest.InsertEdgeDTO;
+import com.graph.rest.IngestMessageDTO;
 import com.graph.service.EdgeInsertion;
 import com.graph.service.GraphJetService;
 import com.graph.service.GraphOps;
+import com.twitter.graphjet.algorithms.SimilarityInfo;
+import com.twitter.graphjet.algorithms.SimilarityResponse;
+import com.twitter.graphjet.algorithms.intersection.CosineUpdateNormalization;
+import com.twitter.graphjet.algorithms.intersection.IntersectionSimilarity;
+import com.twitter.graphjet.algorithms.intersection.IntersectionSimilarityRequest;
+import com.twitter.graphjet.algorithms.intersection.RelatedTweetUpdateNormalization;
 import com.twitter.graphjet.bipartite.MultiSegmentPowerLawBipartiteGraph;
 import com.twitter.graphjet.bipartite.api.EdgeIterator;
+import com.twitter.graphjet.stats.NullStatsReceiver;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,13 +37,13 @@ public class GraphJetServiceImpl implements GraphJetService {
     /**
      * Insert edge in background
      *
-     * @param insertEdgeDTO
+     * @param ingestMessageDTO
      * @return
      */
     @Override
-    public String insertEdge(InsertEdgeDTO insertEdgeDTO) {
+    public String insertEdge(IngestMessageDTO ingestMessageDTO) {
         try {
-            new Thread(new EdgeInsertion(getGraph(), insertEdgeDTO.getMessages())).start();
+            new Thread(new EdgeInsertion(getGraph(), ingestMessageDTO.getMessages())).start();
         } catch (Throwable throwable) {
             logger.error("Unexpected error while getting graph", throwable);
             return "Unexpected error occurred, check graph";
@@ -129,6 +137,61 @@ public class GraphJetServiceImpl implements GraphJetService {
 
         }
         return null;
+    }
+
+
+    @Override
+    public List<HashTag> similarHashTags(String hashTag, int count) {
+        try {
+            return getSimilarHashTags(hashTag, count, getGraph().tweetHashtagBigraph, getGraph().hashtags);
+        } catch (Throwable throwable) {
+            logger.error("Error in finding graph ... ", throwable.getStackTrace());
+        }
+        return null;
+    }
+
+    private List<HashTag> getSimilarHashTags(String hashTag, int count, final MultiSegmentPowerLawBipartiteGraph bigraph, Long2ObjectOpenHashMap<HashTag> hashTags) {
+        Long id = Long.valueOf(hashTag);
+        int maxNumNeighbors = 100;
+        int minNeighborDegree = 1;
+        int maxNumSamplesPerNeighbor = 100;
+        int minCooccurrence = 2;
+        int minDegree = 2;
+        double maxLowerMultiplicativeDeviation = 5.0;
+        double maxUpperMultiplicativeDeviation = 5.0;
+
+        if (bigraph.getRightNodeDegree(id) == 0) {
+            logger.debug("Hashtag #%s not found", hashTag);
+            return Collections.EMPTY_LIST;
+        }
+
+        logger.debug("Running similarity for node " + id);
+        IntersectionSimilarityRequest intersectionSimilarityRequest = new IntersectionSimilarityRequest(
+                id,
+                count,
+                new LongOpenHashSet(),
+                maxNumNeighbors,
+                minNeighborDegree,
+                maxNumSamplesPerNeighbor,
+                minCooccurrence,
+                minDegree,
+                maxLowerMultiplicativeDeviation,
+                maxUpperMultiplicativeDeviation,
+                false);
+
+        RelatedTweetUpdateNormalization cosineUpdateNormalization = new CosineUpdateNormalization();
+        IntersectionSimilarity cosineSimilarity = new IntersectionSimilarity(bigraph,
+                cosineUpdateNormalization, new NullStatsReceiver());
+        SimilarityResponse similarityResponse =
+                cosineSimilarity.getSimilarNodes(intersectionSimilarityRequest, new Random());
+        ;
+        logger.debug("Related hashtags for hashtag: " + hashTag);
+        List<HashTag> similarHashTags = new ArrayList<>();
+        for (SimilarityInfo sim : similarityResponse.getRankedSimilarNodes()) {
+            logger.debug(hashTags.get(sim.getSimilarNode()) + ": " + sim.toString());
+            similarHashTags.add(hashTags.get(sim.getSimilarNode()));
+        }
+        return similarHashTags;
     }
 
 

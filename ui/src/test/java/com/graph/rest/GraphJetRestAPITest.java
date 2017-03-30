@@ -34,7 +34,7 @@ public class GraphJetRestAPITest extends BaseSpringTestCase {
 
     @Test
     public void insertEdge() throws FileNotFoundException {
-        InsertEdgeDTO dto = createInsertDTO();
+        IngestMessageDTO dto = createInsertDTO();
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         System.out.println(graphJetService.insertEdge(dto));
@@ -60,8 +60,8 @@ public class GraphJetRestAPITest extends BaseSpringTestCase {
         }
     }
 
-    private InsertEdgeDTO createInsertDTO() throws FileNotFoundException {
-        InsertEdgeDTO dto = new InsertEdgeDTO();
+    private IngestMessageDTO createInsertDTO() throws FileNotFoundException {
+        IngestMessageDTO dto = new IngestMessageDTO();
         dto.setMessages(getMessages());
         return dto;
     }
