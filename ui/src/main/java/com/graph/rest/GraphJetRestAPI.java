@@ -117,7 +117,7 @@ public class GraphJetRestAPI {
     public Response topHashTagMessages(@PathParam("hashTag") String hashTag, @QueryParam("count") int count) {
         logger.debug("Request for similar " + count + " hashtags for hashtag" + hashTag);
         Preconditions.notBlank(hashTag);
-        Long hashTagId = Long.valueOf(hashTag.hashCode());
+        Long hashTagId = Integer.toUnsignedLong(hashTag.hashCode());
         return generateResponse(graphJetService.topMessagesByHashTags(hashTagId, count));
     }
 
