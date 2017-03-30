@@ -1,7 +1,7 @@
 package com.graph.rest;
 
 import com.google.gson.Gson;
-import com.graph.Helper;
+import com.graph.GraphHelper;
 import com.graph.Impl.GraphJetServiceImpl;
 import com.graph.Utils.Preconditions;
 import com.graph.service.GraphJetService;
@@ -35,30 +35,30 @@ public class GraphJetRestAPI {
     }
 
     @POST
-    @Path("/create")
+    @Path("{identifier}/create")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createGraph() {
+    public Response createGraph(@PathParam("identifier") final String identifer) {
         logger.debug("Request to create new Graph");
-        return generateResponse(graphJetService.createGraph());
+        return generateResponse(graphJetService.createGraph(identifer));
     }
 
     @POST
-    @Path("/insert")
+    @Path("{identifier}/insert/")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response insertEdge(final IngestMessageDTO dto) throws IOException {
+    public Response insertEdge(@PathParam("identifier") final String identifer, final IngestMessageDTO dto) throws IOException {
         //For testing
         for (int i = 0; i < 100000; i += 10000) {
             final IngestMessageDTO ingestMessageDTO = new IngestMessageDTO();
             try {
-                ingestMessageDTO.setMessages(Helper.getMessages(i));
+                ingestMessageDTO.setMessages(GraphHelper.getMessages(i));
             } catch (IOException e) {
                 e.printStackTrace();
             }
             logger.debug("Post call for Edge Insertion" + ingestMessageDTO);
             Preconditions.notNull(ingestMessageDTO, "EdgeDto can't be null");
-            graphJetService.insertEdge(ingestMessageDTO);
+            graphJetService.insertEdge(identifer, ingestMessageDTO);
         }
 
         /*new Thread(new Runnable() {
@@ -67,7 +67,7 @@ public class GraphJetRestAPI {
                 for (int i = 0; i < 100000; i += 10000) {
                     final IngestMessageDTO ingestMessageDTO = new IngestMessageDTO();
                     try {
-                        ingestMessageDTO.setMessages(Helper.getMessages(i));
+                        ingestMessageDTO.setMessages(GraphHelper.getMessages(i));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -82,7 +82,7 @@ public class GraphJetRestAPI {
                 for (int i = 0; i < 100000; i += 10000) {
                     final IngestMessageDTO ingestMessageDTO = new IngestMessageDTO();
                     try {
-                        ingestMessageDTO.setMessages(Helper.getMessages(i));
+                        ingestMessageDTO.setMessages(GraphHelper.getMessages(i));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -96,86 +96,86 @@ public class GraphJetRestAPI {
     }
 
     @GET
-    @Path("/topUsers")
+    @Path("{identifier}/topUsers")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response topUsers(@QueryParam("count") int count) {
-        return generateResponse(graphJetService.topUsers(count));
+    public Response topUsers(@PathParam("identifier") final String identifer, @QueryParam("count") int count) {
+        return generateResponse(graphJetService.topUsers(identifer, count));
     }
 
     @GET
-    @Path("/topMessagesByUserId/{userId}")
+    @Path("{identifier}/topMessagesByUserId/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response topMessage(@PathParam("userId") Long userId, @QueryParam("count") int count) {
+    public Response topMessage(@PathParam("identifier") final String identifer, @PathParam("userId") Long userId, @QueryParam("count") int count) {
         logger.debug("Request for top Messages");
-        return generateResponse(graphJetService.topMessagesByUserId(userId, count));
+        return generateResponse(graphJetService.topMessagesByUserId(identifer, userId, count));
     }
 
     @GET
-    @Path("/topHashtags")
+    @Path("{identifier}/topHashtags")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response topHashtags(@QueryParam("count") int count) {
+    public Response topHashtags(@PathParam("identifier") final String identifer, @QueryParam("count") int count) {
         logger.debug("Request for top Hashtags");
-        return generateResponse(graphJetService.topHashTags(count));
+        return generateResponse(graphJetService.topHashTags(identifer, count));
     }
 
     @GET
-    @Path("/topUserMessages/{userId}")
+    @Path("{identifier}/topUserMessages/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response topUserMessage(@PathParam("userId") Long userId, @QueryParam("count") int count) {
+    public Response topUserMessage(@PathParam("identifier") final String identifer, @PathParam("userId") Long userId, @QueryParam("count") int count) {
         logger.debug("Request for top " + count + " tweets by " + userId);
-        return generateResponse(graphJetService.topMessagesByUserId(userId, count));
+        return generateResponse(graphJetService.topMessagesByUserId(identifer, userId, count));
     }
 
     @GET
-    @Path("/topMessageUsers/{msgId}")
+    @Path("{identifier}/topMessageUsers/{msgId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response topTweetsUser(@PathParam("msgId") Long msgId, @QueryParam("count") int count) {
+    public Response topTweetsUser(@PathParam("identifier") final String identifer, @PathParam("msgId") Long msgId, @QueryParam("count") int count) {
         logger.debug("Request for top " + count + " user related/connected to " + msgId + "tweets");
-        return generateResponse(graphJetService.topUsersByMsgId(msgId, count));
+        return generateResponse(graphJetService.topUsersByMsgId(identifer, msgId, count));
     }
 
     @GET
-    @Path("/similarHashTags/{hashTag}")
+    @Path("{identifier}/similarHashTags/{hashTag}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response similarHashTags(@PathParam("hashTag") String hashTag, @QueryParam("count") int count) {
+    public Response similarHashTags(@PathParam("identifier") final String identifer, @PathParam("hashTag") String hashTag, @QueryParam("count") int count) {
         logger.debug("Request for similar " + count + " hashtags for hashtag" + hashTag);
         Preconditions.notBlank(hashTag);
-        return generateResponse(graphJetService.similarHashTags(hashTag, count));
+        return generateResponse(graphJetService.similarHashTags(identifer, hashTag, count));
     }
 
     @GET
-    @Path("/topHashTagMessages/{hashTag}")
+    @Path("{identifier}/topHashTagMessages/{hashTag}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response topHashTagMessages(@PathParam("hashTag") String hashTag, @QueryParam("count") int count) {
+    public Response topHashTagMessages(@PathParam("identifier") final String identifer, @PathParam("hashTag") String hashTag, @QueryParam("count") int count) {
         logger.debug("Request for similar " + count + " hashtags for hashtag" + hashTag);
         Preconditions.notBlank(hashTag);
         Long hashTagId = Integer.toUnsignedLong(hashTag.hashCode());
-        return generateResponse(graphJetService.topMessagesByHashTags(hashTagId, count));
+        return generateResponse(graphJetService.topMessagesByHashTags(identifer, hashTagId, count));
     }
 
     @GET
-    @Path("/topMessages")
+    @Path("{identifier}/topMessages")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response topTweets(@QueryParam("count") int count) {
+    public Response topTweets(@PathParam("identifier") final String identifer, @QueryParam("count") int count) {
         logger.debug("Request for top " + count + " users");
-        return generateResponse(graphJetService.topMessages(count));
+        return generateResponse(graphJetService.topMessages(identifer, count));
     }
 
     @GET
-    @Path("/topInfluencers")
+    @Path("{identifier}/topInfluencers")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response topInfluencers(@QueryParam("count") int count) {
+    public Response topInfluencers(@PathParam("identifier") final String identifer, @QueryParam("count") int count) {
         logger.debug("Request for top " + count + " users");
-        return generateResponse(graphJetService.topInfluencers(count));
+        return generateResponse(graphJetService.topInfluencers(identifer, count));
     }
 
 

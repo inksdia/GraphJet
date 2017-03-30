@@ -17,9 +17,9 @@ import java.util.List;
  */
 
 /**
- * Helper class for testing etc
+ * GraphHelper class for testing etc
  */
-public class Helper {
+public class GraphHelper {
 
     public static List<Message> getMessages(int i) throws IOException {
 

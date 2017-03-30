@@ -13,7 +13,7 @@ import org.springframework.util.StopWatch;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.graph.Helper.getMessages;
+import static com.graph.GraphHelper.getMessages;
 
 /**
  * Created by saurav on 28/03/17.
@@ -22,6 +22,7 @@ public class GraphJetRestAPITest extends BaseSpringTestCase {
 
     @Autowired
     private GraphJetService graphJetService;
+    public static final String graphIdentifier = "TEST_GRAPH";
 
     @Test
     public void testSpring() {
@@ -34,33 +35,34 @@ public class GraphJetRestAPITest extends BaseSpringTestCase {
 
     @Test
     public void insertEdge() throws IOException {
+
         IngestMessageDTO dto = createInsertDTO();
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        System.out.println(graphJetService.insertEdge(dto));
+        System.out.println(graphJetService.insertEdge(graphIdentifier, dto));
         stopWatch.stop();
         System.out.println("Time: " + stopWatch.getLastTaskTimeMillis());
-        final Map<Message, Long> messages = graphJetService.topMessages(10);
+        final Map<Message, Long> messages = graphJetService.topMessages(graphIdentifier, 10);
         System.out.println("******MESSAGE*******");
         System.out.println(messages);
         if (messages != null && !messages.isEmpty()) {
-            System.out.println(graphJetService.topUsersByMsgId(messages.keySet().iterator().next().getId(), 10));
+            System.out.println(graphJetService.topUsersByMsgId(graphIdentifier, messages.keySet().iterator().next().getId(), 10));
         }
-        final Map<ProfileUser, Long> profileUsers = graphJetService.topUsers(10);
+        final Map<ProfileUser, Long> profileUsers = graphJetService.topUsers(graphIdentifier, 10);
         System.out.println("******PROFILE*******");
         System.out.println(profileUsers);
         if (profileUsers != null && !profileUsers.isEmpty()) {
-            System.out.println(graphJetService.topMessagesByUserId(profileUsers.keySet().iterator().next().getId(), 10));
+            System.out.println(graphJetService.topMessagesByUserId(graphIdentifier, profileUsers.keySet().iterator().next().getId(), 10));
         }
-        final Map<HashTag, Long> hashTags = graphJetService.topHashTags(10);
+        final Map<HashTag, Long> hashTags = graphJetService.topHashTags(graphIdentifier, 10);
         System.out.println("******HASHTAGS*******");
         System.out.println(hashTags);
         if (hashTags != null && !hashTags.isEmpty()) {
-            System.out.println(graphJetService.topMessagesByHashTags(hashTags.keySet().iterator().next().getId(), 10));
+            System.out.println(graphJetService.topMessagesByHashTags(graphIdentifier, hashTags.keySet().iterator().next().getId(), 10));
         }
 
         System.out.println("******INFLUENCER*******");
-        System.out.println(graphJetService.topInfluencers(100));
+        System.out.println(graphJetService.topInfluencers(graphIdentifier, 100));
 
     }
 

@@ -41,9 +41,9 @@ public class GraphJetServiceImpl implements GraphJetService {
      * @return
      */
     @Override
-    public String insertEdge(IngestMessageDTO ingestMessageDTO) {
+    public String insertEdge(String identifier, IngestMessageDTO ingestMessageDTO) {
         try {
-            new EdgeInsertion(getGraph(), ingestMessageDTO.getMessages()).run();
+            new EdgeInsertion(getGraph(identifier), ingestMessageDTO.getMessages()).run();
         } catch (Throwable throwable) {
             logger.error("Unexpected error while getting graph", throwable);
             return "Unexpected error occurred, check graph";
@@ -62,11 +62,11 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public Map<ProfileUser, Long> topUsers(int count) {
+    public Map<ProfileUser, Long> topUsers(String identifier, int count) {
         try {
-            Iterator<Long> iter = getGraph().users.keySet().iterator();
+            Iterator<Long> iter = getGraph(identifier).users.keySet().iterator();
             Map<Long, Long> ids = getTopEntities(iter, true, getGraph().userTweetBigraph, count, false);
-            return findEntitiesByIds(ids, getGraph().users);
+            return findEntitiesByIds(ids, getGraph(identifier).users);
         } catch (Throwable e) {
 
         }
@@ -74,9 +74,9 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public Map<Message, Long> topMessages(int count) {
+    public Map<Message, Long> topMessages(String identifier, int count) {
         try {
-            Iterator<Long> iter = getGraph().tweets.keySet().iterator();
+            Iterator<Long> iter = getGraph(identifier).tweets.keySet().iterator();
             Map<Long, Long> ids = getTopEntities(iter, false, getGraph().userTweetBigraph, count, false);
             return findEntitiesByIds(ids, getGraph().tweets);
         } catch (Throwable e) {
@@ -86,9 +86,9 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public Map<HashTag, Long> topHashTags(int count) {
+    public Map<HashTag, Long> topHashTags(String identifier, int count) {
         try {
-            Iterator<Long> iter = getGraph().hashtags.keySet().iterator();
+            Iterator<Long> iter = getGraph(identifier).hashtags.keySet().iterator();
             Map<Long, Long> ids = getTopEntities(iter, false, getGraph().tweetHashtagBigraph, count, false);
             return findEntitiesByIds(ids, getGraph().hashtags);
         } catch (Throwable e) {
@@ -98,9 +98,9 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public Map<Message, Long> topMessagesByUserId(Long userId, int count) {
+    public Map<Message, Long> topMessagesByUserId(String identifier, Long userId, int count) {
         try {
-            Map<Long, Long> ids = getTopEntities(userId, true, getGraph().userTweetBigraph);
+            Map<Long, Long> ids = getTopEntities(userId, true, getGraph(identifier).userTweetBigraph);
             //trim by count or change getTopEntities method, will see
             return findEntitiesByIds(ids, getGraph().tweets);
         } catch (Throwable t) {
@@ -110,9 +110,9 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public Map<ProfileUser, Long> topUsersByMsgId(Long msgId, int count) {
+    public Map<ProfileUser, Long> topUsersByMsgId(String identifier, Long msgId, int count) {
         try {
-            Map<Long, Long> ids = getTopEntities(msgId, false, getGraph().userTweetBigraph);
+            Map<Long, Long> ids = getTopEntities(msgId, false, getGraph(identifier).userTweetBigraph);
             return findEntitiesByIds(ids, getGraph().users);
         } catch (Throwable t) {
 
@@ -121,9 +121,9 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public Map<HashTag, Long> topMessagesByHashTags(Long hashTagId, int count) {
+    public Map<HashTag, Long> topMessagesByHashTags(String identifier, Long hashTagId, int count) {
         try {
-            Map<Long, Long> ids = getTopEntities(hashTagId, true, getGraph().tweetHashtagBigraph);
+            Map<Long, Long> ids = getTopEntities(hashTagId, true, getGraph(identifier).tweetHashtagBigraph);
             return findEntitiesByIds(ids, getGraph().hashtags);
         } catch (Throwable t) {
 
@@ -132,9 +132,9 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public Map<Message, Long> topHashTagsByTweets(Long msgId) {
+    public Map<Message, Long> topHashTagsByTweets(String identifier, Long msgId) {
         try {
-            Map<Long, Long> ids = getTopEntities(msgId, true, getGraph().tweetHashtagBigraph);
+            Map<Long, Long> ids = getTopEntities(msgId, true, getGraph(identifier).tweetHashtagBigraph);
             return findEntitiesByIds(ids, getGraph().tweets);
         } catch (Throwable t) {
 
@@ -144,9 +144,9 @@ public class GraphJetServiceImpl implements GraphJetService {
 
 
     @Override
-    public Map<HashTag, Long> similarHashTags(String hashTag, int count) {
+    public Map<HashTag, Long> similarHashTags(String identifier, String hashTag, int count) {
         try {
-            return getSimilarHashTags(hashTag, count, getGraph().tweetHashtagBigraph, getGraph().hashtags);
+            return getSimilarHashTags(hashTag, count, getGraph(identifier).tweetHashtagBigraph, getGraph().hashtags);
         } catch (Throwable throwable) {
             logger.error("Error in finding graph ... ", throwable.getStackTrace());
         }
@@ -154,11 +154,11 @@ public class GraphJetServiceImpl implements GraphJetService {
     }
 
     @Override
-    public Map<ProfileUser, Long> topInfluencers(int count) {
+    public Map<ProfileUser, Long> topInfluencers(String identifier, int count) {
         try {
-            Iterator<Long> iter = getGraph().users.keySet().iterator();
-            Map<Long, Long> ids = getTopEntities(iter, true, getGraph().userTweetBigraph, count, true);
-            return findEntitiesByIds(ids, getGraph().users);
+            Iterator<Long> iter = getGraph(identifier).users.keySet().iterator();
+            Map<Long, Long> ids = getTopEntities(iter, true, getGraph(identifier).userTweetBigraph, count, true);
+            return findEntitiesByIds(ids, getGraph(identifier).users);
         } catch (Throwable throwable) {
             throwable.printStackTrace();
         }
