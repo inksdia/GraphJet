@@ -31,5 +31,7 @@ public interface GraphJetService {
 
     List<Message> topHashTagsByTweets(Long msgId);
 
+    List<ProfileUser> topInfluencers(int count);
+
     List<HashTag> similarHashTags(String hashTagId, int count);
 }

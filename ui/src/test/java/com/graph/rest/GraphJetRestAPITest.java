@@ -13,7 +13,7 @@ import org.springframework.util.StopWatch;
 import java.io.FileNotFoundException;
 import java.util.List;
 
-import static com.graph.helper.getMessages;
+import static com.graph.Helper.getMessages;
 
 /**
  * Created by saurav on 28/03/17.

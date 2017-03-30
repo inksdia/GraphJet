@@ -62,7 +62,7 @@ public class GraphJetServiceImpl implements GraphJetService {
     public List<ProfileUser> topUsers(int count) {
         try {
             Iterator<Long> iter = getGraph().users.keySet().iterator();
-            List<Long> ids = getTopEntities(iter, true, getGraph().userTweetBigraph, count);
+            List<Long> ids = getTopEntities(iter, true, getGraph().userTweetBigraph, count, false);
             return findEntitiesByIds(ids, getGraph().users);
         } catch (Throwable e) {
 
@@ -74,7 +74,7 @@ public class GraphJetServiceImpl implements GraphJetService {
     public List<Message> topMessages(int count) {
         try {
             Iterator<Long> iter = getGraph().tweets.keySet().iterator();
-            List<Long> ids = getTopEntities(iter, false, getGraph().userTweetBigraph, count);
+            List<Long> ids = getTopEntities(iter, false, getGraph().userTweetBigraph, count, false);
             return findEntitiesByIds(ids, getGraph().tweets);
         } catch (Throwable e) {
 
@@ -86,7 +86,7 @@ public class GraphJetServiceImpl implements GraphJetService {
     public List<HashTag> topHashTags(int count) {
         try {
             Iterator<Long> iter = getGraph().hashtags.keySet().iterator();
-            List<Long> ids = getTopEntities(iter, false, getGraph().tweetHashtagBigraph, count);
+            List<Long> ids = getTopEntities(iter, false, getGraph().tweetHashtagBigraph, count, false);
             return findEntitiesByIds(ids, getGraph().hashtags);
         } catch (Throwable e) {
 
@@ -150,6 +150,18 @@ public class GraphJetServiceImpl implements GraphJetService {
         return null;
     }
 
+    @Override
+    public List<ProfileUser> topInfluencers(int count) {
+        try {
+            Iterator<Long> iter = getGraph().users.keySet().iterator();
+            List<Long> ids = getTopEntities(iter, true, getGraph().userTweetBigraph, count, true);
+            return findEntitiesByIds(ids, getGraph().users);
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
+        return null;
+    }
+
     private List<HashTag> getSimilarHashTags(String hashTag, int count, final MultiSegmentPowerLawBipartiteGraph bigraph, Long2ObjectOpenHashMap<HashTag> hashTags) {
         Long id = Long.valueOf(hashTag);
         int maxNumNeighbors = 100;
@@ -194,7 +206,6 @@ public class GraphJetServiceImpl implements GraphJetService {
         return similarHashTags;
     }
 
-
     /***
      * Return top entities which is connected with Id, it can be on either side and
      * returns top entites from other side
@@ -216,6 +227,32 @@ public class GraphJetServiceImpl implements GraphJetService {
         return entities;
     }
 
+    private void addToPriorityQueue(Queue<NodeValueEntry> queue, NodeValueEntry nodeValueEntry, int count) {
+        if (queue.size() < count) {
+            queue.add(nodeValueEntry);
+        } else {
+            NodeValueEntry peek = queue.peek();
+            if (nodeValueEntry.getValue() > peek.getValue()) {
+                queue.poll();
+                queue.add(nodeValueEntry);
+            }
+        }
+    }
+
+    private int getNodeDegree(final MultiSegmentPowerLawBipartiteGraph bigraph, long id, boolean side) {
+        if (side) {
+            return bigraph.getLeftNodeDegree(id);
+        }
+        return bigraph.getRightNodeDegree(id);
+    }
+
+    private EdgeIterator getEdges(final MultiSegmentPowerLawBipartiteGraph bigraph, long id, boolean side) {
+        if (side) {
+            return bigraph.getLeftNodeEdges(id);
+        }
+        return bigraph.getRightNodeEdges(id);
+    }
+
     /***
      * Return top entities on same side of iter
      *
@@ -226,28 +263,25 @@ public class GraphJetServiceImpl implements GraphJetService {
      * @return
      */
     @SuppressWarnings("Duplicates")
-    private List<Long> getTopEntities(Iterator<Long> iter, final boolean side, final MultiSegmentPowerLawBipartiteGraph bigraph, int count) {
+    private List<Long> getTopEntities(Iterator<Long> iter, final boolean side, final MultiSegmentPowerLawBipartiteGraph bigraph, int count, boolean secondOrder) {
 
         PriorityQueue<NodeValueEntry> queue = new PriorityQueue<>(count);
         while (iter.hasNext()) {
             long currId = iter.next();
-            int cnt;
-            if (side) {
-                cnt = bigraph.getLeftNodeDegree(currId);
+            int cnt = 0;
+            if (secondOrder) {
+                EdgeIterator edgeIterator = getEdges(bigraph, currId, side);
+                if (edgeIterator != null) {
+                    while (edgeIterator.hasNext()) {
+                        Long rightNode = edgeIterator.nextLong();
+                        cnt += getNodeDegree(bigraph, rightNode, !side);
+                    }
+                }
             } else {
-                cnt = bigraph.getRightNodeDegree(currId);
+                cnt = getNodeDegree(bigraph, currId, side);
             }
             if (cnt == 1) continue;
-
-            if (queue.size() < count) {
-                queue.add(new NodeValueEntry(currId, cnt));
-            } else {
-                NodeValueEntry peek = queue.peek();
-                if (cnt > peek.getValue()) {
-                    queue.poll();
-                    queue.add(new NodeValueEntry(currId, cnt));
-                }
-            }
+            addToPriorityQueue(queue, new NodeValueEntry(currId, cnt), count);
         }
 
         if (queue.size() == 0) {

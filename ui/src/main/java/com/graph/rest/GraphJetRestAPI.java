@@ -3,7 +3,7 @@ package com.graph.rest;
 import com.google.gson.Gson;
 import com.graph.Impl.GraphJetServiceImpl;
 import com.graph.Utils.Preconditions;
-import com.graph.helper;
+import com.graph.Helper;
 import com.graph.service.GraphJetService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +50,7 @@ public class GraphJetRestAPI {
     public Response insertEdge(IngestMessageDTO ingestMessageDTO) throws FileNotFoundException {
         //For testing
         ingestMessageDTO = new IngestMessageDTO();
-        ingestMessageDTO.setMessages(helper.getMessages());
+        ingestMessageDTO.setMessages(Helper.getMessages());
         logger.debug("Post call for Edge Insertion" + ingestMessageDTO);
         Preconditions.notNull(ingestMessageDTO, "EdgeDto can't be null");
         return generateResponse(graphJetService.insertEdge(ingestMessageDTO));
@@ -128,6 +128,15 @@ public class GraphJetRestAPI {
     public Response topTweets(@QueryParam("count") int count) {
         logger.debug("Request for top " + count + " users");
         return generateResponse(graphJetService.topMessages(count));
+    }
+
+    @GET
+    @Path("/topInfluencers")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response topInfluencers(@QueryParam("count") int count) {
+        logger.debug("Request for top " + count + " users");
+        return generateResponse(graphJetService.topInfluencers(count));
     }
 
 

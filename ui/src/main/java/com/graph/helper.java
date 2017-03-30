@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * Helper class for testing etc
  */
-public class helper {
+public class Helper {
 
     public static List<Message> getMessages() throws FileNotFoundException {
 
@@ -89,7 +89,7 @@ public class helper {
 
     public static JsonArray type1() throws FileNotFoundException {
         JsonParser parser = new JsonParser();
-        JsonElement a = parser.parse(new FileReader("/Users/saurav/src/GraphJet2/UM_1.json"));
+        JsonElement a = parser.parse(new FileReader("/Users/saurav/src/G.json"));
         return a.getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray();
     }
 
