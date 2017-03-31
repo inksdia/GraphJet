@@ -22,7 +22,7 @@ public class GraphJetRestAPITest extends BaseSpringTestCase {
 
     @Autowired
     private GraphJetService graphJetService;
-    public static final String graphIdentifier = "TEST_GRAPH";
+    public static final String graphIdentifier = "58dce7f5e4b00fd7124b47f4";
 
     @Test
     public void testSpring() {
@@ -36,28 +36,32 @@ public class GraphJetRestAPITest extends BaseSpringTestCase {
     @Test
     public void insertEdge() throws IOException {
 
-        IngestMessageDTO dto = createInsertDTO();
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-        System.out.println(graphJetService.insertEdge(graphIdentifier, dto));
-        stopWatch.stop();
-        System.out.println("Time: " + stopWatch.getLastTaskTimeMillis());
-        final Map<Message, Long> messages = graphJetService.topMessages(graphIdentifier, 10);
+        graphJetService.createGraph(graphIdentifier);
+
+        for (int i = 0; i < 100000; i += 10000) {
+            IngestMessageDTO dto = createInsertDTO(i);
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
+            System.out.println(graphJetService.insertEdge(graphIdentifier, dto));
+            stopWatch.stop();
+            System.out.println("Time: " + stopWatch.getLastTaskTimeMillis());
+        }
+        final Map<Message, Double> messages = graphJetService.topMessages(graphIdentifier, 10);
         System.out.println("******MESSAGE*******");
         System.out.println(messages);
-        if (messages != null && !messages.isEmpty()) {
+        if (messages != null && !messages.isEmpty() && messages.keySet().iterator().next() != null) {
             System.out.println(graphJetService.topUsersByMsgId(graphIdentifier, messages.keySet().iterator().next().getId(), 10));
         }
-        final Map<ProfileUser, Long> profileUsers = graphJetService.topUsers(graphIdentifier, 10);
+        final Map<ProfileUser, Double> profileUsers = graphJetService.topUsers(graphIdentifier, 10);
         System.out.println("******PROFILE*******");
         System.out.println(profileUsers);
         if (profileUsers != null && !profileUsers.isEmpty()) {
             System.out.println(graphJetService.topMessagesByUserId(graphIdentifier, profileUsers.keySet().iterator().next().getId(), 10));
         }
-        final Map<HashTag, Long> hashTags = graphJetService.topHashTags(graphIdentifier, 10);
+        final Map<HashTag, Double> hashTags = graphJetService.topHashTags(graphIdentifier, 10);
         System.out.println("******HASHTAGS*******");
         System.out.println(hashTags);
-        if (hashTags != null && !hashTags.isEmpty()) {
+        if (hashTags != null && !hashTags.isEmpty() && hashTags.keySet().iterator().next() != null) {
             System.out.println(graphJetService.topMessagesByHashTags(graphIdentifier, hashTags.keySet().iterator().next().getId(), 10));
         }
 
@@ -103,9 +107,9 @@ public class GraphJetRestAPITest extends BaseSpringTestCase {
         return Lists.newArrayList(m1, m2, m3);
     }*/
 
-    private IngestMessageDTO createInsertDTO() throws IOException {
+    private IngestMessageDTO createInsertDTO(int i) throws IOException {
         IngestMessageDTO dto = new IngestMessageDTO();
-        dto.setMessages(getMessages(0));
+        dto.setMessages(getMessages(graphIdentifier, i));
         return dto;
     }
 

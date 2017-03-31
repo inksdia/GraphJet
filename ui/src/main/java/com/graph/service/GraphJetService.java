@@ -16,21 +16,21 @@ public interface GraphJetService {
 
     String createGraph(String identifier);
 
-    Map<ProfileUser, Long> topUsers(String identifier, int count);
+    Map<ProfileUser, Double> topUsers(String identifier, int count);
 
-    Map<Message, Long> topMessages(String identifier, int count);
+    Map<Message, Double> topMessages(String identifier, int count);
 
-    Map<HashTag, Long> topHashTags(String identifier, int count);
+    Map<HashTag, Double> topHashTags(String identifier, int count);
 
-    Map<Message, Long> topMessagesByUserId(String identifier, Long userId, int count);
+    Map<Message, Double> topMessagesByUserId(String identifier, Long userId, int count);
 
-    Map<ProfileUser, Long> topUsersByMsgId(String identifier, Long msgId, int count);
+    Map<ProfileUser, Double> topUsersByMsgId(String identifier, Long msgId, int count);
 
-    Map<HashTag, Long> topMessagesByHashTags(String identifier, Long hashTagId, int count);
+    Map<HashTag, Double> topMessagesByHashTags(String identifier, Long hashTagId, int count);
 
-    Map<Message, Long> topHashTagsByTweets(String identifier, Long msgId);
+    Map<Message, Double> topHashTagsByTweets(String identifier, Long msgId);
 
-    Map<ProfileUser, Long> topInfluencers(String identifier, int count);
+    Map<ProfileUser, Double> topInfluencers(String identifier, int count);
 
-    Map<HashTag, Long> similarHashTags(String identifier, String hashTagId, int count);
+    Map<HashTag, Double> similarHashTags(String identifier, String hashTagId, int count);
 }

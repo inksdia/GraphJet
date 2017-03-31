@@ -47,51 +47,10 @@ public class GraphJetRestAPI {
     @Path("{identifier}/insert/")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response insertEdge(@PathParam("identifier") final String identifer, final IngestMessageDTO dto) throws IOException {
+    public Response insertEdge(@PathParam("identifier") final String identifer, final IngestMessageDTO ingestMessageDTO) throws IOException {
         //For testing
-        for (int i = 0; i < 100000; i += 10000) {
-            final IngestMessageDTO ingestMessageDTO = new IngestMessageDTO();
-            try {
-                ingestMessageDTO.setMessages(GraphHelper.getMessages(i));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            logger.debug("Post call for Edge Insertion" + ingestMessageDTO);
-            Preconditions.notNull(ingestMessageDTO, "EdgeDto can't be null");
-            graphJetService.insertEdge(identifer, ingestMessageDTO);
-        }
-
-        /*new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 100000; i += 10000) {
-                    final IngestMessageDTO ingestMessageDTO = new IngestMessageDTO();
-                    try {
-                        ingestMessageDTO.setMessages(GraphHelper.getMessages(i));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    logger.debug("Post call for Edge Insertion" + ingestMessageDTO);
-                    Preconditions.notNull(ingestMessageDTO, "EdgeDto can't be null");
-                    graphJetService.insertEdge(ingestMessageDTO);
-                }
-            }
-        }).start();*//*new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 100000; i += 10000) {
-                    final IngestMessageDTO ingestMessageDTO = new IngestMessageDTO();
-                    try {
-                        ingestMessageDTO.setMessages(GraphHelper.getMessages(i));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    logger.debug("Post call for Edge Insertion" + ingestMessageDTO);
-                    Preconditions.notNull(ingestMessageDTO, "EdgeDto can't be null");
-                    graphJetService.insertEdge(ingestMessageDTO);
-                }
-            }
-        }).start();*/
+        extractMessages(identifer);
+        //graphJetService.insertEdge(identifer, ingestMessageDTO);
         return generateResponse("Graph creation started");
     }
 
@@ -176,6 +135,19 @@ public class GraphJetRestAPI {
     public Response topInfluencers(@PathParam("identifier") final String identifer, @QueryParam("count") int count) {
         logger.debug("Request for top " + count + " users");
         return generateResponse(graphJetService.topInfluencers(identifer, count));
+    }
+
+    public void extractMessages(String identifer) throws IOException {
+        for (int i = 0; i < 100000; i += 10000) {
+            final IngestMessageDTO ingestMessageDTO = new IngestMessageDTO();
+            try {
+                ingestMessageDTO.setMessages(GraphHelper.getMessages(identifer, i));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Preconditions.notNull(ingestMessageDTO, "EdgeDto can't be null");
+            graphJetService.insertEdge(identifer, ingestMessageDTO);
+        }
     }
 
 

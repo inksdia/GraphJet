@@ -10,6 +10,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -21,26 +22,33 @@ import java.util.List;
  */
 public class GraphHelper {
 
-    public static List<Message> getMessages(int i) throws IOException {
+    public static List<Message> getMessages(String identifier, int i) throws IOException {
 
-        JsonArray array = getJsonArray(i);
+        try {
+            JsonArray array = getJsonArray(identifier, i);
 
-        System.out.println("Total message in file: " + array.size());
+            System.out.println("Total message in file: " + array.size());
 
-        List<Message> messages = new ArrayList<>();
+            List<Message> messages = new ArrayList<>();
 
-        for (JsonElement element : array) {
-            JsonObject object = element.getAsJsonObject().get("_source").getAsJsonObject();
-            Message msg = convertToMessage(object);
-            if (msg != null) {
-                messages.add(msg);
+            for (JsonElement element : array) {
+                JsonObject object = element.getAsJsonObject().get("_source").getAsJsonObject();
+                Message msg = convertToMessage(object);
+                if (msg != null) {
+                    messages.add(msg);
+                }
             }
+            System.out.println("Total Message received: " + messages.size());
+
+            //saveToFile(messages);
+
+            return messages;
+
+        } catch (Throwable ex) {
+            ex.printStackTrace();
         }
-        System.out.println("Total Message received: " + messages.size());
 
-        saveToFile(messages);
-
-        return messages;
+        return Collections.emptyList();
     }
 
     private static void saveToFile(List<Message> messages) throws IOException {
@@ -85,14 +93,17 @@ public class GraphHelper {
         return null;
     }
 
-    public static JsonArray getJsonArray(int i) throws FileNotFoundException {
-        return type2(i);
+    public static JsonArray getJsonArray(String identifier, int i) throws FileNotFoundException {
+        return type2(identifier, i);
         //return type1();
     }
 
-    public static JsonArray type2(int i) throws FileNotFoundException {
+    public static JsonArray type2(String folderName, int i) throws FileNotFoundException {
         JsonParser parser = new JsonParser();
-        JsonElement a = parser.parse(new FileReader("/Users/saurav/Downloads/hits" + i));
+        ClassLoader classLoader = GraphHelper.class.getClassLoader();
+        String path = classLoader.getResource("log4j.properties").getPath();
+        path = path.substring(0, path.lastIndexOf("/"));
+        JsonElement a = parser.parse(new FileReader(path + "/" + folderName + "/" + folderName + ".txt" + i));
         return a.getAsJsonArray();
     }
 
